@@ -18,8 +18,4 @@
     <ProjectReference Include="..\Distribuidora_La_Central.Shared\Distribuidora_La_Central.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\" />
-  </ItemGroup>
-
 </Project>
