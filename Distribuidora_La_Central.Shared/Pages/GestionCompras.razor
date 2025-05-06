@@ -185,25 +185,51 @@
     // Métodos para historial de compras
     private async Task AplicarFiltros()
     {
-        try 
+        try
         {
-           
-            
             // Construir URL con parámetros de filtro
-            var url = $"api/Compra/GetAllCompras?";
-            
-            if (filtroProveedor > 0) url += $"proveedorId={filtroProveedor}&";
-            if (!string.IsNullOrEmpty(filtroEstado)) url += $"estado={filtroEstado}&";
-            if (filtroFechaInicio.HasValue) url += $"fechaInicio={filtroFechaInicio.Value.ToString("yyyy-MM-dd")}&";
-            if (filtroFechaFin.HasValue) url += $"fechaFin={filtroFechaFin.Value.ToString("yyyy-MM-dd")}&";
-            
+            var url = $"api/Compra/GetFilteredCompras?";
+
+            if (filtroProveedor > 0)
+                url += $"proveedorId={filtroProveedor}&";
+
+            if (!string.IsNullOrEmpty(filtroEstado))
+                url += $"estado={filtroEstado}&";
+
+            if (filtroFechaInicio.HasValue)
+                url += $"fechaInicio={filtroFechaInicio.Value.ToString("yyyy-MM-dd")}&";
+
+            if (filtroFechaFin.HasValue)
+                url += $"fechaFin={filtroFechaFin.Value.ToString("yyyy-MM-dd")}&";
+
+            // Eliminar el último '&' si existe
+            url = url.TrimEnd('&');
+
             // Llamada al API con filtros
-            comprasFiltradas = await Http.GetFromJsonAsync<List<Compra>>(url.TrimEnd('&')) ?? new();
-            
-            paginaActual = 1;
-            ActualizarDatosPaginados();
-            
-            mensaje = comprasFiltradas.Any() ? "" : "No se encontraron compras con los filtros aplicados";
+            var response = await Http.GetFromJsonAsync<List<CompraConProveedor>>(url);
+
+            if (response != null)
+            {
+                comprasFiltradas = response.Select(c => new Compra
+                    {
+                        idCompra = c.idCompra,
+                        proveedor = new Proveedor
+                        {
+                            idProveedor = c.idProveedor,
+                            nombre = c.Proveedor?.nombre ?? ""
+                        },
+                        fechaCompra = c.fechaCompra,
+                        TotalCompra = c.TotalCompra,
+                        Estado = c.Estado,
+                        FechaPago = c.FechaPago,
+                        MetodoPago = c.MetodoPago
+                    }).ToList();
+
+                paginaActual = 1;
+                ActualizarDatosPaginados();
+
+                mensaje = comprasFiltradas.Any() ? "" : "No se encontraron compras con los filtros aplicados";
+            }
         }
         catch (Exception ex)
         {
@@ -212,6 +238,27 @@
             ActualizarDatosPaginados();
         }
     }
+    public class CompraConProveedor
+    {
+        public int idCompra { get; set; }
+        public int idProveedor { get; set; }
+        public DateTime fechaCompra { get; set; }
+        public decimal TotalCompra { get; set; }
+        public string Estado { get; set; }
+        public DateTime? FechaPago { get; set; }
+        public string MetodoPago { get; set; }
+        public ProveedorInfo Proveedor { get; set; }
+    }
+
+
+
+
+    public class ProveedorInfo
+    {
+        public int idProveedor { get; set; }
+        public string nombre { get; set; }
+    }
+
 
     private void ResetearFiltros()
     {

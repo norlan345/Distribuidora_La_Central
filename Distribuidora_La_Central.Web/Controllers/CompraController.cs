@@ -20,6 +20,42 @@ namespace Distribuidora_La_Central.Web.Controllers
         }
 
 
+        [HttpPut]
+        [Route("MarcarComoPagada/{id}")]
+        public IActionResult MarcarComoPagada(int id)
+        {
+            try
+            {
+                using SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+                con.Open();
+
+                string query = @"UPDATE Compra 
+                        SET Estado = 'Pagado', 
+                            FechaPago = @fechaPago
+                        WHERE idCompra = @idCompra";
+
+                using SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@idCompra", id);
+                cmd.Parameters.AddWithValue("@fechaPago", DateTime.Now);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    return Ok(new { message = "Compra marcada como pagada correctamente" });
+                }
+                else
+                {
+                    return NotFound(new { message = "Compra no encontrada" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = $"Error al marcar compra como pagada: {ex.Message}" });
+            }
+        }
+
+
         [HttpGet]
         [Route("GetFilteredCompras")]
         public IActionResult GetFilteredCompras(
